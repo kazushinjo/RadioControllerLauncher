@@ -27,7 +27,10 @@ struct RadioControllerLauncherApp: App {
                 NSApplication.shared.terminate(nil)
             }
         } label: {
-            Label("Radio Controllers", systemImage: "antenna.radiowaves.left.and.right")
+            HStack(spacing: 4) {
+                Image(systemName: "antenna.radiowaves.left.and.right")
+                Text("無線機")
+            }
         }
         .menuBarExtraStyle(.menu)
     }
