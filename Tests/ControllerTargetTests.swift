@@ -5,6 +5,7 @@ final class ControllerTargetTests: XCTestCase {
     func testTargetsAreUnique() {
         XCTAssertEqual(Set(ControllerTarget.all.map(\.id)).count, 3)
         XCTAssertEqual(Set(ControllerTarget.all.map(\.appName)).count, 3)
+        XCTAssertEqual(Set(ControllerTarget.all.map(\.bundleIdentifier)).count, 3)
     }
 
     func testApplicationsPathIsFirstCandidate() {

@@ -20,9 +20,29 @@ final class ControllerLauncher: ObservableObject {
     }
 
     func launch(_ target: ControllerTarget) {
-        if let running = workspace.runningApplications.first(where: {
-            $0.localizedName == target.name || $0.localizedName == target.appName
-        }) {
+        Task { await launchExclusively(target) }
+    }
+
+    private func launchExclusively(_ target: ControllerTarget) async {
+        let otherApplications = ControllerTarget.all
+            .filter { $0.id != target.id }
+            .flatMap { NSRunningApplication.runningApplications(withBundleIdentifier: $0.bundleIdentifier) }
+
+        otherApplications.forEach { $0.terminate() }
+
+        if !otherApplications.isEmpty {
+            for _ in 0..<30 {
+                if otherApplications.allSatisfy({ $0.isTerminated }) { break }
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+            guard otherApplications.allSatisfy({ $0.isTerminated }) else {
+                presentError("起動中のControllerを終了できませんでした。終了を確認してから再実行してください。")
+                refreshRunningState()
+                return
+            }
+        }
+
+        if let running = NSRunningApplication.runningApplications(withBundleIdentifier: target.bundleIdentifier).first {
             running.activate(options: [.activateAllWindows])
             refreshRunningState()
             return
@@ -46,9 +66,8 @@ final class ControllerLauncher: ObservableObject {
     }
 
     func refreshRunningState() {
-        let names = Set(workspace.runningApplications.compactMap(\.localizedName))
         runningBundleIDs = Set(ControllerTarget.all.compactMap { target in
-            names.contains(target.name) || names.contains(target.appName) ? target.id : nil
+            NSRunningApplication.runningApplications(withBundleIdentifier: target.bundleIdentifier).isEmpty ? nil : target.id
         })
     }
 
